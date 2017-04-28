@@ -13,6 +13,17 @@
 #include <dirent.h>
 #include <string.h>
 
+int is_vm_file(char *file) {
+    const char *dot = strrchr(file, '.');
+    if(!dot || dot == file) { return 0; }
+    
+    const char *extension = dot + 1;
+    if (strcmp(extension, "vm") == 0) {
+        return 1;
+    } else {
+        return 0;
+    }
+}
 
 int main(int argc, const char * argv[]) {
     char filepath[200];
@@ -33,23 +44,30 @@ int main(int argc, const char * argv[]) {
         directory = opendir(filepath);
         if (directory != NULL) {
             while ((entry = readdir(directory))) {
+                if (!is_vm_file(entry->d_name)) { continue; }
+                
                 number_of_files++;
                 files = realloc(files, number_of_files * sizeof(char *));
                 
-                //TODO: append file names to directory path, if file has '.vm'
                 size_t new_index = number_of_files - 1;
-                size_t entry_length = strlen(entry->d_name) + 1;
-                files[new_index] = malloc(entry_length * sizeof(char)); //TODO: is this right?
-                strcpy(files[new_index], entry->d_name);
+                char *entry_path = malloc(sizeof(filepath) + sizeof(entry->d_name));
+                strcpy(entry_path, filepath);
+                strcat(entry_path, "/");
+                strcat(entry_path, entry->d_name);
+                size_t entry_length = strlen(entry_path) + 1;
+                files[new_index] = malloc(entry_length * sizeof(char));
+                strcpy(files[new_index], entry_path);
             }
             
             closedir(directory);
         }
     } else if (S_ISREG(path_stat.st_mode)) {
-        number_of_files = 1;
-        size_t file_length = strlen(filepath) + 1;
-        files[0] = malloc(file_length * sizeof(char));
-        strcpy(files[0], filepath);
+        if (is_vm_file(filepath)) {
+            number_of_files = 1;
+            size_t file_length = strlen(filepath) + 1;
+            files[0] = malloc(file_length * sizeof(char));
+            strcpy(files[0], filepath);
+        }
     } else {
         //do nothing?
     }
