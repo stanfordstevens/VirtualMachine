@@ -95,12 +95,23 @@ int main(int argc, const char * argv[]) {
     }
     
     if (number_of_files == 0) {
-        printf("No virtual machine files found");
+        printf("No virtual machine files found\n");
         return 1;
     }
     
-    //TODO: save file in same directory that other files are in, with same name as directory
-    FILE *output_file = fopen("/Users/FireCrotch/Desktop/ouput.asm", "w");
+    char output_path[200];
+    strcpy(output_path, files[0]);
+    char *loc = strrchr(output_path, '/');
+    *(loc) = 0;
+    
+    char directory_name[30];
+    strcpy(directory_name, strrchr(output_path, '/') + 1);
+    
+    strcat(output_path, "/");
+    strcat(output_path, directory_name);
+    strcat(output_path, ".asm");
+    
+    FILE *output_file = fopen(output_path, "w");
     fputs("@256\nD=A\n@SP\nM=D\n", output_file); //initialize stack pointer
     
     for (int i = 0; i < number_of_files; i++) {
