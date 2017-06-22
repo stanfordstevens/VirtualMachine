@@ -119,6 +119,7 @@ int main(int argc, const char * argv[]) {
         FILE *input_file = fopen(filepath, "r");
         
         char line[256];
+        int count = 0;
         while (fgets(line, sizeof(line), input_file)) {
             char *trimmed_line = trim_whitespace(line);
             
@@ -126,7 +127,7 @@ int main(int argc, const char * argv[]) {
                 continue;
             }
             
-            const char *delimeter = " ";
+            static const char *delimeter = " ";
             char *command = strtok(trimmed_line, delimeter);
             
             if (strcmp(command, "push") == 0) {
@@ -143,17 +144,115 @@ int main(int argc, const char * argv[]) {
                     fputs("A=M\n", output_file);
                     
                     fputs("M=D\n", output_file);
-                    fputs("@SP\nM=M+1\n", output_file); //increment stack pointer
+                    fputs("@SP\nM=M+1\n", output_file); //increment stack pointer //TODO: function that writes the increment??, or a bool to increment at end of loop?
                 }
             } else if (strcmp(command, "add") == 0) {
-                fputs("@SP\n", output_file); //TODO: combine in one line?
+                fputs("@SP\n", output_file);
                 fputs("A=M-1\n", output_file);
                 fputs("D=M\n", output_file);
                 fputs("A=A-1\n", output_file);
                 fputs("M=M+D\n", output_file);
-                fputs("D=A\n@SP\nM=D+1", output_file);
+                fputs("@SP\nM=M-1\n", output_file);
+            } else if (strcmp(command, "sub") == 0) {
+                fputs("@SP\n", output_file); //TODO: function for the first 4 lines here? All it does is get x and y so i can operate on them, could do some block thing?
+                fputs("A=M-1\n", output_file);
+                fputs("D=M\n", output_file);
+                fputs("A=A-1\n", output_file);
+                fputs("@SP\nM=M-1\n", output_file);
+            } else if (strcmp(command, "neg") == 0) {
+                fputs("@SP\n", output_file);
+                fputs("A=M-1\n", output_file);
+                fputs("M=-M\n", output_file);
+            } else if (strcmp(command, "eq") == 0) {
+                fputs("@SP\n", output_file); //TODO: deduplicate code - very similar to lt and gt
+                fputs("A=M-1\n", output_file);
+                fputs("D=M\n", output_file);
+                fputs("A=A-1\n", output_file);
+                fputs("D=D-M\n", output_file);
+                
+                fputs("@EQUAL\n", output_file);
+                fputs("D;JEQ\n", output_file);
+                
+                fputs("D=0\n", output_file);
+                fputs("@SET\n", output_file);
+                fputs("0;JMP\n", output_file);
+                
+                fprintf(output_file, "(EQUAL)\n");
+                fputs("D=1\n", output_file);
+                
+                fputs("(SET)\n", output_file);
+                fputs("@SP\n", output_file);
+                fputs("A=M-1\n", output_file);
+                fputs("A=A-1\n", output_file);
+                fputs("M=D\n", output_file);
+                fputs("@SP\nM=M-1\n", output_file);
+            } else if (strcmp(command, "gt") == 0) {
+                fputs("@SP\n", output_file);
+                fputs("A=M-1\n", output_file);
+                fputs("D=M\n", output_file);
+                fputs("A=A-1\n", output_file);
+                fputs("D=D-M\n", output_file);
+                
+                fputs("@GREATER\n", output_file); //TODO: tags not unique, they just get duplicated, function to get unique tag?
+                fputs("D;JGT\n", output_file);
+                
+                fputs("D=0\n", output_file);
+                fputs("@SET\n", output_file);
+                fputs("0;JMP\n", output_file);
+                
+                fputs("(GREATER)\n", output_file);
+                fputs("D=1\n", output_file);
+                
+                fputs("(SET)\n", output_file);
+                fputs("@SP\n", output_file);
+                fputs("A=M-1\n", output_file);
+                fputs("A=A-1\n", output_file);
+                fputs("M=D\n", output_file);
+                fputs("@SP\nM=M-1\n", output_file);
+            } else if (strcmp(command, "lt") == 0) {
+                fputs("@SP\n", output_file);
+                fputs("A=M-1\n", output_file);
+                fputs("D=M\n", output_file);
+                fputs("A=A-1\n", output_file);
+                fputs("D=D-M\n", output_file);
+                
+                fputs("@LESS\n", output_file);
+                fputs("D;JLT\n", output_file);
+                
+                fputs("D=0\n", output_file);
+                fputs("@SET\n", output_file);
+                fputs("0;JMP\n", output_file);
+                
+                fputs("(LESS)\n", output_file);
+                fputs("D=1\n", output_file);
+                
+                fputs("(SET)\n", output_file);
+                fputs("@SP\n", output_file);
+                fputs("A=M-1\n", output_file);
+                fputs("A=A-1\n", output_file);
+                fputs("M=D\n", output_file);
+                fputs("@SP\nM=M-1\n", output_file);
+            } else if (strcmp(command, "and") == 0) {
+                fputs("@SP\n", output_file);
+                fputs("A=M-1\n", output_file);
+                fputs("D=M\n", output_file);
+                fputs("A=A-1\n", output_file);
+                fputs("M=M&D\n", output_file);
+                fputs("@SP\nM=M-1\n", output_file);
+            } else if (strcmp(command, "or") == 0) {
+                fputs("@SP\n", output_file);
+                fputs("A=M-1\n", output_file);
+                fputs("D=M\n", output_file);
+                fputs("A=A-1\n", output_file);
+                fputs("M=M|D\n", output_file);
+                fputs("@SP\nM=M-1\n", output_file);
+            } else if (strcmp(command, "not") == 0) {
+                fputs("@SP\n", output_file);
+                fputs("A=M-1\n", output_file);
+                fputs("M=!M\n", output_file);
             }
         }
+        count++;
     }
     
     fclose(output_file);
