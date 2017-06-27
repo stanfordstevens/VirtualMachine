@@ -170,17 +170,17 @@ int main(int argc, const char * argv[]) {
                 fputs("A=A-1\n", output_file);
                 fputs("D=D-M\n", output_file);
                 
-                fputs("@EQUAL\n", output_file);
+                fprintf(output_file, "@EQUAL%d\n", count);
                 fputs("D;JEQ\n", output_file);
                 
                 fputs("D=0\n", output_file);
-                fputs("@SET\n", output_file);
+                fprintf(output_file, "@SET%d\n", count);
                 fputs("0;JMP\n", output_file);
                 
-                fprintf(output_file, "(EQUAL)\n");
+                fprintf(output_file, "(EQUAL%d)\n", count);
                 fputs("D=1\n", output_file);
                 
-                fputs("(SET)\n", output_file);
+                fprintf(output_file, "(SET%d)\n", count);
                 fputs("@SP\n", output_file);
                 fputs("A=M-1\n", output_file);
                 fputs("A=A-1\n", output_file);
@@ -193,17 +193,17 @@ int main(int argc, const char * argv[]) {
                 fputs("A=A-1\n", output_file);
                 fputs("D=D-M\n", output_file);
                 
-                fputs("@GREATER\n", output_file); //TODO: tags not unique, they just get duplicated, function to get unique tag?
+                fprintf(output_file, "@GREATER%d\n", count);
                 fputs("D;JGT\n", output_file);
                 
                 fputs("D=0\n", output_file);
-                fputs("@SET\n", output_file);
+                fprintf(output_file, "@SET%d\n", count);
                 fputs("0;JMP\n", output_file);
                 
-                fputs("(GREATER)\n", output_file);
+                fprintf(output_file, "(GREATER%d)\n", count);
                 fputs("D=1\n", output_file);
                 
-                fputs("(SET)\n", output_file);
+                fprintf(output_file, "(SET%d)\n", count);
                 fputs("@SP\n", output_file);
                 fputs("A=M-1\n", output_file);
                 fputs("A=A-1\n", output_file);
@@ -216,17 +216,17 @@ int main(int argc, const char * argv[]) {
                 fputs("A=A-1\n", output_file);
                 fputs("D=D-M\n", output_file);
                 
-                fputs("@LESS\n", output_file);
+                fprintf(output_file, "@LESS%d\n", count);
                 fputs("D;JLT\n", output_file);
                 
                 fputs("D=0\n", output_file);
-                fputs("@SET\n", output_file);
+                fprintf(output_file, "@SET%d\n", count);
                 fputs("0;JMP\n", output_file);
                 
-                fputs("(LESS)\n", output_file);
+                fprintf(output_file, "(LESS%d)\n", count);
                 fputs("D=1\n", output_file);
                 
-                fputs("(SET)\n", output_file);
+                fprintf(output_file, "(SET%d)\n", count);
                 fputs("@SP\n", output_file);
                 fputs("A=M-1\n", output_file);
                 fputs("A=A-1\n", output_file);
@@ -251,8 +251,9 @@ int main(int argc, const char * argv[]) {
                 fputs("A=M-1\n", output_file);
                 fputs("M=!M\n", output_file);
             }
+            
+            count++;
         }
-        count++;
     }
     
     fclose(output_file);
