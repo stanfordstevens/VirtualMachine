@@ -158,6 +158,7 @@ int main(int argc, const char * argv[]) {
                 fputs("A=M-1\n", output_file);
                 fputs("D=M\n", output_file);
                 fputs("A=A-1\n", output_file);
+                fputs("M=M-D\n", output_file);
                 fputs("@SP\nM=M-1\n", output_file);
             } else if (strcmp(command, "neg") == 0) {
                 fputs("@SP\n", output_file);
@@ -178,7 +179,7 @@ int main(int argc, const char * argv[]) {
                 fputs("0;JMP\n", output_file);
                 
                 fprintf(output_file, "(EQUAL%d)\n", count);
-                fputs("D=1\n", output_file);
+                fputs("D=-1\n", output_file);
                 
                 fprintf(output_file, "(SET%d)\n", count);
                 fputs("@SP\n", output_file);
@@ -191,7 +192,7 @@ int main(int argc, const char * argv[]) {
                 fputs("A=M-1\n", output_file);
                 fputs("D=M\n", output_file);
                 fputs("A=A-1\n", output_file);
-                fputs("D=D-M\n", output_file);
+                fputs("D=M-D\n", output_file);
                 
                 fprintf(output_file, "@GREATER%d\n", count);
                 fputs("D;JGT\n", output_file);
@@ -201,7 +202,7 @@ int main(int argc, const char * argv[]) {
                 fputs("0;JMP\n", output_file);
                 
                 fprintf(output_file, "(GREATER%d)\n", count);
-                fputs("D=1\n", output_file);
+                fputs("D=-1\n", output_file);
                 
                 fprintf(output_file, "(SET%d)\n", count);
                 fputs("@SP\n", output_file);
@@ -224,7 +225,7 @@ int main(int argc, const char * argv[]) {
                 fputs("0;JMP\n", output_file);
                 
                 fprintf(output_file, "(LESS%d)\n", count);
-                fputs("D=1\n", output_file);
+                fputs("D=-1\n", output_file);
                 
                 fprintf(output_file, "(SET%d)\n", count);
                 fputs("@SP\n", output_file);
