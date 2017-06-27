@@ -214,7 +214,7 @@ int main(int argc, const char * argv[]) {
                 fputs("A=M-1\n", output_file);
                 fputs("D=M\n", output_file);
                 fputs("A=A-1\n", output_file);
-                fputs("D=D-M\n", output_file);
+                fputs("D=M-D\n", output_file);
                 
                 fprintf(output_file, "@LESS%d\n", count);
                 fputs("D;JLT\n", output_file);
