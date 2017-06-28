@@ -112,7 +112,12 @@ int main(int argc, const char * argv[]) {
     strcat(output_path, ".asm");
     
     FILE *output_file = fopen(output_path, "w");
+    //TODO: remove dupe
     fputs("@256\nD=A\n@SP\nM=D\n", output_file); //initialize stack pointer
+    fputs("@300\nD=A\n@LCL\nM=D\n", output_file); //initialize local
+    fputs("@400\nD=A\n@ARG\nM=D\n", output_file); //initialize argument
+    fputs("@3000\nD=A\n@THIS\nM=D\n", output_file); //initialize this
+    fputs("@3010\nD=A\n@THAT\nM=D\n", output_file); //initialize that
     
     for (int i = 0; i < number_of_files; i++) {
         char *filepath = files[i];
@@ -134,18 +139,98 @@ int main(int argc, const char * argv[]) {
                 char *segment = strtok(NULL, delimeter);
                 char *index = strtok(NULL, delimeter);
                 
+                fputc('@', output_file); //TODO: some 'if' to make sure i should do this
+                fputs(index, output_file);
+                fputc('\n', output_file);
+                fputs("D=A\n", output_file);
+                
                 if (strcmp(segment, "constant") == 0) {
-                    fputc('@', output_file);
-                    fputs(index, output_file);
-                    fputc('\n', output_file);
-                    fputs("D=A\n", output_file);
-                    
                     fputs("@SP\n", output_file);
                     fputs("A=M\n", output_file);
-                    
                     fputs("M=D\n", output_file);
-                    fputs("@SP\nM=M+1\n", output_file); //increment stack pointer //TODO: function that writes the increment??, or a bool to increment at end of loop?
+                } else {
+                    char *label;
+                    if (strcmp(segment, "local") == 0) { //TODO: remove dupe, this is what i do with all of these bitches
+                        label = "LCL";
+                    } else if (strcmp(segment, "argument") == 0) {
+                        label = "ARG";
+                    } else if (strcmp(segment, "this") == 0) {
+                        label = "THIS";
+                    } else if (strcmp(segment, "that") == 0) {
+                        label = "THAT";
+                    } else if (strcmp(segment, "pointer") == 0 && strcmp(index, "0") == 0) {
+                        label = "THIS";
+                    } else if (strcmp(segment, "pointer") == 0 && strcmp(index, "1") == 0) {
+                        label = "THAT";
+                        fputs("D=0\n", output_file); //TODO: better way to do this?
+                    } else if (strcmp(segment, "temp") == 0) {
+                        label = "LCL";
+                    } else if (strcmp(segment, "static") == 0) {
+                        label = "LCL";
+                    } else {
+                        //TODO: what do i do if it is not any of these?? defaulting to local for now
+                        label = "LCL";
+                    }
+                    
+                    //get desired value
+                    fprintf(output_file, "@%s\n", label);
+                    fputs("A=M+D\n", output_file);
+                    fputs("D=M\n", output_file);
+                    
+                    //set value to top of stack
+                    fputs("@SP\n", output_file);
+                    fputs("M=D\n", output_file);
                 }
+                
+                fputs("@SP\nM=M+1\n", output_file); //increment stack pointer
+            } else if (strcmp(command, "pop") == 0) { //TODO: remove dupe with 'push'
+                char *segment = strtok(NULL, delimeter);
+                char *index = strtok(NULL, delimeter);
+                
+                fputc('@', output_file); //TODO: some 'if' to make sure i should do this
+                fputs(index, output_file);
+                fputc('\n', output_file);
+                fputs("D=A\n", output_file);
+                
+                //TODO: do i need to include 'constant'? popping a constant makes no sense
+                char *label;
+                if (strcmp(segment, "local") == 0) {
+                    label = "LCL";
+                } else if (strcmp(segment, "argument") == 0) {
+                    label = "ARG";
+                } else if (strcmp(segment, "this") == 0) {
+                    label = "THIS";
+                } else if (strcmp(segment, "that") == 0) {
+                    label = "THAT";
+                } else if (strcmp(segment, "pointer") == 0 && strcmp(index, "0") == 0) {
+                    label = "THIS";
+                } else if (strcmp(segment, "pointer") == 0 && strcmp(index, "1") == 0) {
+                    label = "THAT";
+                    fputs("D=0\n", output_file); //TODO: better way to do this?
+                } else if (strcmp(segment, "temp") == 0) {
+                    label = "LCL";
+                } else if (strcmp(segment, "static") == 0) {
+                    label = "LCL";
+                } else {
+                    //TODO: what do i do if it is not any of these?? defaulting to local for now
+                    label = "LCL";
+                }
+                
+                //get address to set
+                fprintf(output_file, "@%s\n", label);
+                fputs("D=M+D\n", output_file);
+                fputs("@ADDRESS\n", output_file);
+                fputs("M=D\n", output_file);
+                
+                //set value at top of stack into desired address
+                fputs("@SP\n", output_file);
+                fputs("A=M-1\n", output_file);
+                fputs("D=M\n", output_file);
+                fputs("@ADDRESS\n", output_file);
+                fputs("A=M\n", output_file);
+                fputs("M=D\n", output_file);
+                
+                fputs("@SP\nM=M-1\n", output_file); //decrement stack pointer
             } else if (strcmp(command, "add") == 0) {
                 fputs("@SP\n", output_file);
                 fputs("A=M-1\n", output_file);
