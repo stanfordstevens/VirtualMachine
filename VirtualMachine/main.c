@@ -51,6 +51,25 @@ char* trim_whitespace(char *string) {
     return string;
 }
 
+char* labelForSegmentName(char *segment) {
+    if (strcmp(segment, "local") == 0) {
+        return "LCL";
+    } else if (strcmp(segment, "argument") == 0) {
+        return "ARG";
+    } else if (strcmp(segment, "this") == 0) {
+        return "THIS";
+    } else if (strcmp(segment, "that") == 0) {
+        return "THAT";
+    } else if (strcmp(segment, "temp") == 0) {
+        return "LCL";
+    } else if (strcmp(segment, "static") == 0) {
+        return "LCL";
+    } else {
+        //TODO: what do i do if it is not any of these?? defaulting to local for now
+        return "LCL";
+    }
+}
+
 int main(int argc, const char * argv[]) {
     char *filepath = malloc(200*sizeof(char));
     printf("Enter filepath> ");
@@ -160,26 +179,8 @@ int main(int argc, const char * argv[]) {
                     if (strcmp(segment, "constant") == 0) {
                         //do nothing?
                     } else {
-                        char *label;
-                        if (strcmp(segment, "local") == 0) { //TODO: remove dupe, this is what i do with all of these bitches
-                            label = "LCL";
-                        } else if (strcmp(segment, "argument") == 0) {
-                            label = "ARG";
-                        } else if (strcmp(segment, "this") == 0) {
-                            label = "THIS";
-                        } else if (strcmp(segment, "that") == 0) {
-                            label = "THAT";
-                        } else if (strcmp(segment, "temp") == 0) {
-                            label = "LCL";
-                        } else if (strcmp(segment, "static") == 0) {
-                            label = "LCL";
-                        } else {
-                            //TODO: what do i do if it is not any of these?? defaulting to local for now
-                            label = "LCL";
-                        }
-                        
                         //get desired value
-                        fprintf(output_file, "@%s\n", label);
+                        fprintf(output_file, "@%s\n", labelForSegmentName(segment));
                         fputs("A=M+D\n", output_file);
                         fputs("D=M\n", output_file);
                     }
@@ -203,12 +204,7 @@ int main(int argc, const char * argv[]) {
                 
                 //TODO: do i need to include 'constant'? popping a constant makes no sense
                 if (strcmp(segment, "pointer") == 0) {
-                    char *label;
-                    if (strcmp(index, "0") == 0) {
-                        label = "THIS";
-                    } else {
-                        label = "THAT";
-                    }
+                    char *label = strcmp(index, "0") == 0 ? "THIS" : "THAT";
                     
                     //get address to set
                     fprintf(output_file, "@%s\n", label);
@@ -216,26 +212,8 @@ int main(int argc, const char * argv[]) {
                     fputs("@ADDRESS\n", output_file);
                     fputs("M=D\n", output_file);
                 } else {
-                    char *label;
-                    if (strcmp(segment, "local") == 0) {
-                        label = "LCL";
-                    } else if (strcmp(segment, "argument") == 0) {
-                        label = "ARG";
-                    } else if (strcmp(segment, "this") == 0) {
-                        label = "THIS";
-                    } else if (strcmp(segment, "that") == 0) {
-                        label = "THAT";
-                    } else if (strcmp(segment, "temp") == 0) {
-                        label = "LCL";
-                    } else if (strcmp(segment, "static") == 0) {
-                        label = "LCL";
-                    } else {
-                        //TODO: what do i do if it is not any of these?? defaulting to local for now
-                        label = "LCL";
-                    }
-                    
                     //get address to set
-                    fprintf(output_file, "@%s\n", label);
+                    fprintf(output_file, "@%s\n", labelForSegmentName(segment));
                     fputs("D=M+D\n", output_file);
                     fputs("@ADDRESS\n", output_file);
                     fputs("M=D\n", output_file);
