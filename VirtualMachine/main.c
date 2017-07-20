@@ -147,10 +147,7 @@ int main(int argc, const char * argv[]) {
         int count = 0;
         while (fgets(line, sizeof(line), input_file)) {
             char *trimmed_line = trim_whitespace(line);
-            
-            if (should_ignore_line(trimmed_line)) {
-                continue;
-            }
+            if (should_ignore_line(trimmed_line)) { continue; }
             
             static const char *delimeter = " ";
             char *command = strtok(trimmed_line, delimeter);
@@ -159,11 +156,9 @@ int main(int argc, const char * argv[]) {
                 char *segment = strtok(NULL, delimeter);
                 char *index = strtok(NULL, delimeter);
                 
+                //get desired value
                 if (strcmp(segment, "pointer") == 0) {
-                    char *label = strcmp(index, "0") == 0 ? "THIS" : "THAT";
-                    
-                    //get desired value
-                    fprintf(output_file, "@%s\n", label);
+                    fprintf(output_file, "@%s\n", strcmp(index, "0") == 0 ? "THIS" : "THAT");
                     fputs("D=M\n", output_file);
                 } else {
                     fputc('@', output_file);
@@ -171,10 +166,7 @@ int main(int argc, const char * argv[]) {
                     fputc('\n', output_file);
                     fputs("D=A\n", output_file);
                     
-                    if (strcmp(segment, "constant") == 0) {
-                        //do nothing?
-                    } else {
-                        //get desired value
+                    if (strcmp(segment, "constant") != 0) {
                         fprintf(output_file, "@%s\n", labelForSegmentName(segment));
                         fputs("A=M+D\n", output_file);
                         fputs("D=M\n", output_file);
@@ -188,15 +180,13 @@ int main(int argc, const char * argv[]) {
                 
                 //increment stack pointer
                 fputs("@SP\nM=M+1\n", output_file);
-            } else if (strcmp(command, "pop") == 0) { //TODO: remove dupe with 'push'
+            } else if (strcmp(command, "pop") == 0) {
                 char *segment = strtok(NULL, delimeter);
                 char *index = strtok(NULL, delimeter);
                 
                 //get address to set
                 if (strcmp(segment, "pointer") == 0) {
-                    char *label = strcmp(index, "0") == 0 ? "THIS" : "THAT";
-                    
-                    fprintf(output_file, "@%s\n", label);
+                    fprintf(output_file, "@%s\n", strcmp(index, "0") == 0 ? "THIS" : "THAT");
                     fputs("D=A\n", output_file);
                     fputs("@ADDRESS\n", output_file);
                     fputs("M=D\n", output_file);
@@ -222,85 +212,33 @@ int main(int argc, const char * argv[]) {
                 
                 //decrement stack pointer
                 fputs("@SP\nM=M-1\n", output_file);
-            } else if (strcmp(command, "add") == 0) {
+            } else if (strcmp(command, "add") == 0 || strcmp(command, "sub") == 0) {
                 fputs("@SP\n", output_file);
                 fputs("A=M-1\n", output_file);
                 fputs("D=M\n", output_file);
                 fputs("A=A-1\n", output_file);
-                fputs("M=M+D\n", output_file);
-                fputs("@SP\nM=M-1\n", output_file);
-            } else if (strcmp(command, "sub") == 0) {
-                fputs("@SP\n", output_file); //TODO: function for the first 4 lines here? All it does is get x and y so i can operate on them, could do some block thing?
-                fputs("A=M-1\n", output_file);
-                fputs("D=M\n", output_file);
-                fputs("A=A-1\n", output_file);
-                fputs("M=M-D\n", output_file);
+                
+                fprintf(output_file, "M=M%sD\n", strcmp(command, "add") == 0 ? "+" : "-");
                 fputs("@SP\nM=M-1\n", output_file);
             } else if (strcmp(command, "neg") == 0) {
                 fputs("@SP\n", output_file);
                 fputs("A=M-1\n", output_file);
                 fputs("M=-M\n", output_file);
-            } else if (strcmp(command, "eq") == 0) {
-                fputs("@SP\n", output_file); //TODO: deduplicate code - very similar to lt and gt
-                fputs("A=M-1\n", output_file);
-                fputs("D=M\n", output_file);
-                fputs("A=A-1\n", output_file);
-                fputs("D=D-M\n", output_file);
-                
-                fprintf(output_file, "@EQUAL%d\n", count);
-                fputs("D;JEQ\n", output_file);
-                
-                fputs("D=0\n", output_file);
-                fprintf(output_file, "@SET%d\n", count);
-                fputs("0;JMP\n", output_file);
-                
-                fprintf(output_file, "(EQUAL%d)\n", count);
-                fputs("D=-1\n", output_file);
-                
-                fprintf(output_file, "(SET%d)\n", count);
-                fputs("@SP\n", output_file);
-                fputs("A=M-1\n", output_file);
-                fputs("A=A-1\n", output_file);
-                fputs("M=D\n", output_file);
-                fputs("@SP\nM=M-1\n", output_file);
-            } else if (strcmp(command, "gt") == 0) {
+            } else if (strcmp(command, "eq") == 0 || strcmp(command, "gt") == 0 || strcmp(command, "lt") == 0) {
                 fputs("@SP\n", output_file);
                 fputs("A=M-1\n", output_file);
                 fputs("D=M\n", output_file);
                 fputs("A=A-1\n", output_file);
                 fputs("D=M-D\n", output_file);
                 
-                fprintf(output_file, "@GREATER%d\n", count);
-                fputs("D;JGT\n", output_file);
+                fprintf(output_file, "@TEST%d\n", count);
+                fprintf(output_file, "D;%s\n", strcmp(command, "eq") == 0 ? "JEQ" : strcmp(command, "lt") == 0 ? "JLT" : "JGT");
                 
                 fputs("D=0\n", output_file);
                 fprintf(output_file, "@SET%d\n", count);
                 fputs("0;JMP\n", output_file);
                 
-                fprintf(output_file, "(GREATER%d)\n", count);
-                fputs("D=-1\n", output_file);
-                
-                fprintf(output_file, "(SET%d)\n", count);
-                fputs("@SP\n", output_file);
-                fputs("A=M-1\n", output_file);
-                fputs("A=A-1\n", output_file);
-                fputs("M=D\n", output_file);
-                fputs("@SP\nM=M-1\n", output_file);
-            } else if (strcmp(command, "lt") == 0) {
-                fputs("@SP\n", output_file);
-                fputs("A=M-1\n", output_file);
-                fputs("D=M\n", output_file);
-                fputs("A=A-1\n", output_file);
-                fputs("D=M-D\n", output_file);
-                
-                fprintf(output_file, "@LESS%d\n", count);
-                fputs("D;JLT\n", output_file);
-                
-                fputs("D=0\n", output_file);
-                fprintf(output_file, "@SET%d\n", count);
-                fputs("0;JMP\n", output_file);
-                
-                fprintf(output_file, "(LESS%d)\n", count);
+                fprintf(output_file, "(TEST%d)\n", count);
                 fputs("D=-1\n", output_file);
                 
                 fprintf(output_file, "(SET%d)\n", count);
