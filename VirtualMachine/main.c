@@ -52,9 +52,11 @@ char* trim_whitespace(char *string) {
 }
 
 int main(int argc, const char * argv[]) {
-    char filepath[200];
-    printf("Enter filepath> "); //TODO: this does not handle spaces
+    char *filepath = malloc(200*sizeof(char));
+    printf("Enter filepath> ");
     scanf("%s", filepath);
+    
+    filepath = trim_whitespace(filepath);
     
     struct stat path_stat;
     stat(filepath, &path_stat);
@@ -112,7 +114,6 @@ int main(int argc, const char * argv[]) {
     strcat(output_path, ".asm");
     
     FILE *output_file = fopen(output_path, "w");
-    //TODO: remove dupe
     fputs("@256\nD=A\n@SP\nM=D\n", output_file); //initialize stack pointer
     fputs("@300\nD=A\n@LCL\nM=D\n", output_file); //initialize local
     fputs("@400\nD=A\n@ARG\nM=D\n", output_file); //initialize argument
@@ -139,16 +140,7 @@ int main(int argc, const char * argv[]) {
                 char *segment = strtok(NULL, delimeter);
                 char *index = strtok(NULL, delimeter);
                 
-                fputc('@', output_file); //TODO: some 'if' to make sure i should do this
-                fputs(index, output_file); //TODO: do not always need this code
-                fputc('\n', output_file);
-                fputs("D=A\n", output_file);
-                
-                if (strcmp(segment, "constant") == 0) {
-                    fputs("@SP\n", output_file);
-                    fputs("A=M\n", output_file);
-                    fputs("M=D\n", output_file);
-                } else if (strcmp(segment, "pointer") == 0) {
+                if (strcmp(segment, "pointer") == 0) {
                     char *label;
                     if (strcmp(index, "0") == 0) {
                         label = "THIS";
@@ -159,42 +151,47 @@ int main(int argc, const char * argv[]) {
                     //get desired value
                     fprintf(output_file, "@%s\n", label);
                     fputs("D=M\n", output_file);
-                    
-                    //set value to top of stack //TODO: remove with dupe for the other labels, only desird value is different
-                    fputs("@SP\n", output_file);
-                    fputs("A=M\n", output_file);
-                    fputs("M=D\n", output_file);
                 } else {
-                    char *label;
-                    if (strcmp(segment, "local") == 0) { //TODO: remove dupe, this is what i do with all of these bitches
-                        label = "LCL";
-                    } else if (strcmp(segment, "argument") == 0) {
-                        label = "ARG";
-                    } else if (strcmp(segment, "this") == 0) {
-                        label = "THIS";
-                    } else if (strcmp(segment, "that") == 0) {
-                        label = "THAT";
-                    } else if (strcmp(segment, "temp") == 0) {
-                        label = "LCL";
-                    } else if (strcmp(segment, "static") == 0) {
-                        label = "LCL";
+                    fputc('@', output_file);
+                    fputs(index, output_file);
+                    fputc('\n', output_file);
+                    fputs("D=A\n", output_file);
+                    
+                    if (strcmp(segment, "constant") == 0) {
+                        //do nothing?
                     } else {
-                        //TODO: what do i do if it is not any of these?? defaulting to local for now
-                        label = "LCL";
+                        char *label;
+                        if (strcmp(segment, "local") == 0) { //TODO: remove dupe, this is what i do with all of these bitches
+                            label = "LCL";
+                        } else if (strcmp(segment, "argument") == 0) {
+                            label = "ARG";
+                        } else if (strcmp(segment, "this") == 0) {
+                            label = "THIS";
+                        } else if (strcmp(segment, "that") == 0) {
+                            label = "THAT";
+                        } else if (strcmp(segment, "temp") == 0) {
+                            label = "LCL";
+                        } else if (strcmp(segment, "static") == 0) {
+                            label = "LCL";
+                        } else {
+                            //TODO: what do i do if it is not any of these?? defaulting to local for now
+                            label = "LCL";
+                        }
+                        
+                        //get desired value
+                        fprintf(output_file, "@%s\n", label);
+                        fputs("A=M+D\n", output_file);
+                        fputs("D=M\n", output_file);
                     }
-                    
-                    //get desired value
-                    fprintf(output_file, "@%s\n", label);
-                    fputs("A=M+D\n", output_file);
-                    fputs("D=M\n", output_file);
-                    
-                    //set value to top of stack
-                    fputs("@SP\n", output_file);
-                    fputs("A=M\n", output_file);
-                    fputs("M=D\n", output_file);
                 }
                 
-                fputs("@SP\nM=M+1\n", output_file); //increment stack pointer
+                //set value to top of stack
+                fputs("@SP\n", output_file);
+                fputs("A=M\n", output_file);
+                fputs("M=D\n", output_file);
+                
+                //increment stack pointer
+                fputs("@SP\nM=M+1\n", output_file);
             } else if (strcmp(command, "pop") == 0) { //TODO: remove dupe with 'push'
                 char *segment = strtok(NULL, delimeter);
                 char *index = strtok(NULL, delimeter);
