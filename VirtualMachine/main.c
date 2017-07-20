@@ -247,19 +247,13 @@ int main(int argc, const char * argv[]) {
                 fputs("A=A-1\n", output_file);
                 fputs("M=D\n", output_file);
                 fputs("@SP\nM=M-1\n", output_file);
-            } else if (strcmp(command, "and") == 0) {
+            } else if (strcmp(command, "and") == 0 || strcmp(command, "or") == 0) {
                 fputs("@SP\n", output_file);
                 fputs("A=M-1\n", output_file);
                 fputs("D=M\n", output_file);
                 fputs("A=A-1\n", output_file);
-                fputs("M=M&D\n", output_file);
-                fputs("@SP\nM=M-1\n", output_file);
-            } else if (strcmp(command, "or") == 0) {
-                fputs("@SP\n", output_file);
-                fputs("A=M-1\n", output_file);
-                fputs("D=M\n", output_file);
-                fputs("A=A-1\n", output_file);
-                fputs("M=M|D\n", output_file);
+                
+                fprintf(output_file, "M=M%sD\n", strcmp(command, "and") == 0 ? "&" : "|");
                 fputs("@SP\nM=M-1\n", output_file);
             } else if (strcmp(command, "not") == 0) {
                 fputs("@SP\n", output_file);
