@@ -160,12 +160,7 @@ int main(int argc, const char * argv[]) {
                 char *index = strtok(NULL, delimeter);
                 
                 if (strcmp(segment, "pointer") == 0) {
-                    char *label;
-                    if (strcmp(index, "0") == 0) {
-                        label = "THIS";
-                    } else {
-                        label = "THAT";
-                    }
+                    char *label = strcmp(index, "0") == 0 ? "THIS" : "THAT";
                     
                     //get desired value
                     fprintf(output_file, "@%s\n", label);
@@ -197,22 +192,20 @@ int main(int argc, const char * argv[]) {
                 char *segment = strtok(NULL, delimeter);
                 char *index = strtok(NULL, delimeter);
                 
-                fputc('@', output_file); //TODO: some 'if' to make sure i should do this
-                fputs(index, output_file);
-                fputc('\n', output_file);
-                fputs("D=A\n", output_file);
-                
-                //TODO: do i need to include 'constant'? popping a constant makes no sense
+                //get address to set
                 if (strcmp(segment, "pointer") == 0) {
                     char *label = strcmp(index, "0") == 0 ? "THIS" : "THAT";
                     
-                    //get address to set
                     fprintf(output_file, "@%s\n", label);
                     fputs("D=A\n", output_file);
                     fputs("@ADDRESS\n", output_file);
                     fputs("M=D\n", output_file);
                 } else {
-                    //get address to set
+                    fputc('@', output_file);
+                    fputs(index, output_file);
+                    fputc('\n', output_file);
+                    fputs("D=A\n", output_file);
+                    
                     fprintf(output_file, "@%s\n", labelForSegmentName(segment));
                     fputs("D=M+D\n", output_file);
                     fputs("@ADDRESS\n", output_file);
@@ -227,7 +220,8 @@ int main(int argc, const char * argv[]) {
                 fputs("A=M\n", output_file);
                 fputs("M=D\n", output_file);
                 
-                fputs("@SP\nM=M-1\n", output_file); //decrement stack pointer
+                //decrement stack pointer
+                fputs("@SP\nM=M-1\n", output_file);
             } else if (strcmp(command, "add") == 0) {
                 fputs("@SP\n", output_file);
                 fputs("A=M-1\n", output_file);
