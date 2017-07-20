@@ -140,11 +140,27 @@ int main(int argc, const char * argv[]) {
                 char *index = strtok(NULL, delimeter);
                 
                 fputc('@', output_file); //TODO: some 'if' to make sure i should do this
-                fputs(index, output_file);
+                fputs(index, output_file); //TODO: do not always need this code
                 fputc('\n', output_file);
                 fputs("D=A\n", output_file);
                 
                 if (strcmp(segment, "constant") == 0) {
+                    fputs("@SP\n", output_file);
+                    fputs("A=M\n", output_file);
+                    fputs("M=D\n", output_file);
+                } else if (strcmp(segment, "pointer") == 0) {
+                    char *label;
+                    if (strcmp(index, "0") == 0) {
+                        label = "THIS";
+                    } else {
+                        label = "THAT";
+                    }
+                    
+                    //get desired value
+                    fprintf(output_file, "@%s\n", label);
+                    fputs("D=M\n", output_file);
+                    
+                    //set value to top of stack //TODO: remove with dupe for the other labels, only desird value is different
                     fputs("@SP\n", output_file);
                     fputs("A=M\n", output_file);
                     fputs("M=D\n", output_file);
@@ -158,11 +174,6 @@ int main(int argc, const char * argv[]) {
                         label = "THIS";
                     } else if (strcmp(segment, "that") == 0) {
                         label = "THAT";
-                    } else if (strcmp(segment, "pointer") == 0 && strcmp(index, "0") == 0) {
-                        label = "THIS";
-                    } else if (strcmp(segment, "pointer") == 0 && strcmp(index, "1") == 0) {
-                        label = "THAT";
-                        fputs("D=0\n", output_file); //TODO: better way to do this?
                     } else if (strcmp(segment, "temp") == 0) {
                         label = "LCL";
                     } else if (strcmp(segment, "static") == 0) {
@@ -179,6 +190,7 @@ int main(int argc, const char * argv[]) {
                     
                     //set value to top of stack
                     fputs("@SP\n", output_file);
+                    fputs("A=M\n", output_file);
                     fputs("M=D\n", output_file);
                 }
                 
@@ -193,34 +205,44 @@ int main(int argc, const char * argv[]) {
                 fputs("D=A\n", output_file);
                 
                 //TODO: do i need to include 'constant'? popping a constant makes no sense
-                char *label;
-                if (strcmp(segment, "local") == 0) {
-                    label = "LCL";
-                } else if (strcmp(segment, "argument") == 0) {
-                    label = "ARG";
-                } else if (strcmp(segment, "this") == 0) {
-                    label = "THIS";
-                } else if (strcmp(segment, "that") == 0) {
-                    label = "THAT";
-                } else if (strcmp(segment, "pointer") == 0 && strcmp(index, "0") == 0) {
-                    label = "THIS";
-                } else if (strcmp(segment, "pointer") == 0 && strcmp(index, "1") == 0) {
-                    label = "THAT";
-                    fputs("D=0\n", output_file); //TODO: better way to do this?
-                } else if (strcmp(segment, "temp") == 0) {
-                    label = "LCL";
-                } else if (strcmp(segment, "static") == 0) {
-                    label = "LCL";
+                if (strcmp(segment, "pointer") == 0) {
+                    char *label;
+                    if (strcmp(index, "0") == 0) {
+                        label = "THIS";
+                    } else {
+                        label = "THAT";
+                    }
+                    
+                    //get address to set
+                    fprintf(output_file, "@%s\n", label);
+                    fputs("D=A\n", output_file);
+                    fputs("@ADDRESS\n", output_file);
+                    fputs("M=D\n", output_file);
                 } else {
-                    //TODO: what do i do if it is not any of these?? defaulting to local for now
-                    label = "LCL";
+                    char *label;
+                    if (strcmp(segment, "local") == 0) {
+                        label = "LCL";
+                    } else if (strcmp(segment, "argument") == 0) {
+                        label = "ARG";
+                    } else if (strcmp(segment, "this") == 0) {
+                        label = "THIS";
+                    } else if (strcmp(segment, "that") == 0) {
+                        label = "THAT";
+                    } else if (strcmp(segment, "temp") == 0) {
+                        label = "LCL";
+                    } else if (strcmp(segment, "static") == 0) {
+                        label = "LCL";
+                    } else {
+                        //TODO: what do i do if it is not any of these?? defaulting to local for now
+                        label = "LCL";
+                    }
+                    
+                    //get address to set
+                    fprintf(output_file, "@%s\n", label);
+                    fputs("D=M+D\n", output_file);
+                    fputs("@ADDRESS\n", output_file);
+                    fputs("M=D\n", output_file);
                 }
-                
-                //get address to set
-                fprintf(output_file, "@%s\n", label);
-                fputs("D=M+D\n", output_file);
-                fputs("@ADDRESS\n", output_file);
-                fputs("M=D\n", output_file);
                 
                 //set value at top of stack into desired address
                 fputs("@SP\n", output_file);
