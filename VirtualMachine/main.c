@@ -62,8 +62,6 @@ char* labelForSegmentName(char *segment) {
         return "THAT";
     } else if (strcmp(segment, "temp") == 0) {
         return "LCL";
-    } else if (strcmp(segment, "static") == 0) {
-        return "LCL";
     } else {
         //TODO: what do i do if it is not any of these?? defaulting to local for now
         return "LCL";
@@ -132,6 +130,8 @@ int main(int argc, const char * argv[]) {
     strcat(output_path, directory_name);
     strcat(output_path, ".asm");
     
+    //TODO: delete file at output_path if it already exists
+    
     FILE *output_file = fopen(output_path, "w");
     fputs("@256\nD=A\n@SP\nM=D\n", output_file); //initialize stack pointer
     fputs("@300\nD=A\n@LCL\nM=D\n", output_file); //initialize local
@@ -141,6 +141,8 @@ int main(int argc, const char * argv[]) {
     
     for (int i = 0; i < number_of_files; i++) {
         char *filepath = files[i];
+        char *filename = malloc(sizeof(char)*30);
+        filename = strtok(strcpy(filename, strrchr(filepath, '/') + 1), ".");
         FILE *input_file = fopen(filepath, "r");
         
         char line[256];
@@ -160,10 +162,11 @@ int main(int argc, const char * argv[]) {
                 if (strcmp(segment, "pointer") == 0) {
                     fprintf(output_file, "@%s\n", strcmp(index, "0") == 0 ? "THIS" : "THAT");
                     fputs("D=M\n", output_file);
+                } else if (strcmp(segment, "static") == 0) {
+                    fprintf(output_file, "@%s.%s\n", filename, index);
+                    fputs("D=M\n", output_file);
                 } else {
-                    fputc('@', output_file);
-                    fputs(index, output_file);
-                    fputc('\n', output_file);
+                    fprintf(output_file, "@%s\n", index);
                     fputs("D=A\n", output_file);
                     
                     if (strcmp(segment, "constant") != 0) {
@@ -188,12 +191,17 @@ int main(int argc, const char * argv[]) {
                 if (strcmp(segment, "pointer") == 0) {
                     fprintf(output_file, "@%s\n", strcmp(index, "0") == 0 ? "THIS" : "THAT");
                     fputs("D=A\n", output_file);
+                    
+                    fputs("@ADDRESS\n", output_file);
+                    fputs("M=D\n", output_file);
+                } else if (strcmp(segment, "static") == 0) {
+                    fprintf(output_file, "@%s.%s\n", filename, index);
+                    fputs("D=A\n", output_file);
+                    
                     fputs("@ADDRESS\n", output_file);
                     fputs("M=D\n", output_file);
                 } else {
-                    fputc('@', output_file);
-                    fputs(index, output_file);
-                    fputc('\n', output_file);
+                    fprintf(output_file, "@%s\n", index);
                     fputs("D=A\n", output_file);
                     
                     fprintf(output_file, "@%s\n", labelForSegmentName(segment));
