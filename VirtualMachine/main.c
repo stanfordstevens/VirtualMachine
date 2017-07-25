@@ -344,39 +344,12 @@ int main(int argc, const char * argv[]) {
                 fputs("@SP\n", output_file);
                 fputs("M=D\n", output_file);
                 
-                //restore THAT
-                fputs("@FRAME\n", output_file);
-                fputs("A=M-1\n", output_file);
-                fputs("D=M\n", output_file);
-                fputs("@THAT\n", output_file);
-                fputs("M=D\n", output_file);
-                
-                //restore THIS
-                fputs("@FRAME\n", output_file);
-                fputs("D=M\n", output_file);
-                fputs("@2\n", output_file);
-                fputs("A=D-A\n", output_file);
-                fputs("D=M\n", output_file);
-                fputs("@THIS\n", output_file);
-                fputs("M=D\n", output_file);
-                
-                //restore ARG
-                fputs("@FRAME\n", output_file);
-                fputs("D=M\n", output_file);
-                fputs("@3\n", output_file);
-                fputs("A=D-A\n", output_file);
-                fputs("D=M\n", output_file);
-                fputs("@ARG\n", output_file);
-                fputs("M=D\n", output_file);
-                
-                //restore LCL
-                fputs("@FRAME\n", output_file);
-                fputs("D=M\n", output_file);
-                fputs("@4\n", output_file);
-                fputs("A=D-A\n", output_file);
-                fputs("D=M\n", output_file);
-                fputs("@LCL\n", output_file);
-                fputs("M=D\n", output_file);
+#define restoreValueOfAddressWithOffset(address, offset) fprintf(output_file, "@FRAME\nD=M\n@%d\nA=D-A\nD=M\n@%s\nM=D\n", offset, address);
+                restoreValueOfAddressWithOffset("THAT", 1);
+                restoreValueOfAddressWithOffset("THIS", 2);
+                restoreValueOfAddressWithOffset("ARG", 3);
+                restoreValueOfAddressWithOffset("LCL", 4);
+#undef restoreValueOfAddressWithOffset
                 
                 //go to return address
                 fputs("@RET\n", output_file);
