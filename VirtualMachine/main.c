@@ -72,6 +72,19 @@ void decrementStackPointerForFile(FILE *file) {
     fputs("@SP\nM=M-1\n", file);
 }
 
+void incrementStackPointerForFile(FILE *file) {
+    fputs("@SP\nM=M+1\n", file);
+}
+
+void pushAddressToStackForFile(char *address, FILE *file) {
+    fprintf(file, "@%s\n", address);
+    fputs("D=M\n", file);
+    fputs("@SP\n", file);
+    fputs("A=M\n", file);
+    fputs("M=D\n", file);
+    incrementStackPointerForFile(file);
+}
+
 int main(int argc, const char * argv[]) {
     char *filepath = malloc(200*sizeof(char));
     printf("Enter filepath> ");
@@ -137,11 +150,13 @@ int main(int argc, const char * argv[]) {
     //TODO: delete file at output_path if it already exists
     
     FILE *output_file = fopen(output_path, "w");
-    fputs("@256\nD=A\n@SP\nM=D\n", output_file); //initialize stack pointer
-    fputs("@300\nD=A\n@LCL\nM=D\n", output_file); //initialize local
-    fputs("@400\nD=A\n@ARG\nM=D\n", output_file); //initialize argument
-    fputs("@3000\nD=A\n@THIS\nM=D\n", output_file); //initialize this
-    fputs("@3010\nD=A\n@THAT\nM=D\n", output_file); //initialize that
+    
+    //TODO: do not need to initialize this myself yet
+//    fputs("@256\nD=A\n@SP\nM=D\n", output_file); //initialize stack pointer
+//    fputs("@300\nD=A\n@LCL\nM=D\n", output_file); //initialize local (initialize to same as stack pointer??)
+//    fputs("@400\nD=A\n@ARG\nM=D\n", output_file); //initialize argument
+//    fputs("@3000\nD=A\n@THIS\nM=D\n", output_file); //initialize this
+//    fputs("@3010\nD=A\n@THAT\nM=D\n", output_file); //initialize that
     
     for (int i = 0; i < number_of_files; i++) {
         char *filepath = files[i];
@@ -185,8 +200,7 @@ int main(int argc, const char * argv[]) {
                 fputs("A=M\n", output_file);
                 fputs("M=D\n", output_file);
                 
-                //increment stack pointer
-                fputs("@SP\nM=M+1\n", output_file);
+                incrementStackPointerForFile(output_file);
             } else if (strcmp(command, "pop") == 0) {
                 char *segment = strtok(NULL, delimeter);
                 char *index = strtok(NULL, delimeter);
@@ -270,17 +284,17 @@ int main(int argc, const char * argv[]) {
                 fputs("@SP\n", output_file);
                 fputs("A=M-1\n", output_file);
                 fputs("M=!M\n", output_file);
-            } else if (strcmp(command, "label") == 0) { //TODO: function name should be appended to beginning of label
-                char *label = strtok(NULL, delimeter);
+            } else if (strcmp(command, "label") == 0) {
+                char *label = strtok(NULL, delimeter); //TODO: function name should be appended to beginning of label
                 
                 fprintf(output_file, "(%s)\n", label);
             } else if (strcmp(command, "goto") == 0) {
-                char *label = strtok(NULL, delimeter);
+                char *label = strtok(NULL, delimeter); //TODO: function name should be appended to beginning of label
     
                 fprintf(output_file, "@%s\n", label);
                 fputs("0;JMP\n", output_file);
             } else if (strcmp(command, "if-goto") == 0) {
-                char *label = strtok(NULL, delimeter);
+                char *label = strtok(NULL, delimeter); //TODO: function name should be appended to beginning of label
                 
                 fputs("@SP\n", output_file);
                 fputs("A=M-1\n", output_file);
@@ -289,6 +303,120 @@ int main(int argc, const char * argv[]) {
                 
                 fprintf(output_file, "@%s\n", label);
                 fputs("D;JNE\n", output_file);
+            } else if (strcmp(command, "function") == 0) {
+                char *funcName = strtok(NULL, delimeter);
+                int parameterCount = atoi(strtok(NULL, delimeter));
+                
+                fprintf(output_file, "(%s)\n", funcName);
+                for (int i = 0; i < parameterCount; i++) {
+                    fputs("@SP\n", output_file);
+                    fputs("A=M\n", output_file);
+                    fputs("M=0\n", output_file);
+                    incrementStackPointerForFile(output_file); //TODO: am i supposed to actually increment stack pointer..?
+                }
+            } else if (strcmp(command, "return") == 0) {
+                //set FRAME
+                fputs("@LCL\n", output_file);
+                fputs("D=M\n", output_file);
+                fputs("@FRAME\n", output_file);
+                fputs("M=D\n", output_file);
+                fputs("D=M\n", output_file);
+                
+                //set RET
+                fputs("@5\n", output_file);
+                fputs("A=D-A\n", output_file);
+                fputs("D=M\n", output_file);
+                fputs("@RET\n", output_file);
+                fputs("M=D\n", output_file);
+                
+                //reposition return value
+                fputs("@SP\n", output_file);
+                fputs("A=M-1\n", output_file);
+                fputs("D=M\n", output_file);
+                
+                fputs("@ARG\n", output_file);
+                fputs("A=M\n", output_file);
+                fputs("M=D\n", output_file);
+                
+                //restore SP
+                fputs("@ARG\n", output_file); //TODO: problem restoring SP???
+                fputs("D=M+1\n", output_file);
+                fputs("@SP\n", output_file);
+                fputs("M=D\n", output_file);
+                
+                //restore THAT
+                fputs("@FRAME\n", output_file);
+                fputs("A=M-1\n", output_file);
+                fputs("D=M\n", output_file);
+                fputs("@THAT\n", output_file);
+                fputs("M=D\n", output_file);
+                
+                //restore THIS
+                fputs("@FRAME\n", output_file);
+                fputs("D=M\n", output_file);
+                fputs("@2\n", output_file);
+                fputs("A=D-A\n", output_file);
+                fputs("D=M\n", output_file);
+                fputs("@THIS\n", output_file);
+                fputs("M=D\n", output_file);
+                
+                //restore ARG
+                fputs("@FRAME\n", output_file);
+                fputs("D=M\n", output_file);
+                fputs("@3\n", output_file);
+                fputs("A=D-A\n", output_file);
+                fputs("D=M\n", output_file);
+                fputs("@ARG\n", output_file);
+                fputs("M=D\n", output_file);
+                
+                //restore LCL
+                fputs("@FRAME\n", output_file);
+                fputs("D=M\n", output_file);
+                fputs("@4\n", output_file);
+                fputs("A=D-A\n", output_file);
+                fputs("D=M\n", output_file);
+                fputs("@LCL\n", output_file);
+                fputs("M=D\n", output_file);
+                
+                //go to return address
+                fputs("@RET\n", output_file);
+                fputs("A=M\n", output_file);
+                fputs("0;JMP\n", output_file);
+            } else if (strcmp(command, "call") == 0) {
+                char *funcName = strtok(NULL, delimeter);
+                char *parameterCount = strtok(NULL, delimeter);
+                
+                //save function state
+                char returnAddress[256];
+                snprintf(returnAddress, sizeof(returnAddress), "@return-address.%s.%s.%d\n", filename, funcName, count);
+                pushAddressToStackForFile(returnAddress, output_file);
+                pushAddressToStackForFile("@LCL\n", output_file);
+                pushAddressToStackForFile("@ARG\n", output_file);
+                pushAddressToStackForFile("@THIS\n", output_file);
+                pushAddressToStackForFile("@THAT\n", output_file);
+                
+                //reposition ARG
+                fputs("@SP\n", output_file);
+                fputs("D=A\n", output_file);
+                fprintf(output_file, "@%s\n", parameterCount);
+                fputs("D=D-A\n", output_file);
+                fputs("@5\n", output_file);
+                fputs("D=D-A\n", output_file);
+                fputs("@ARG\n", output_file);
+                fputs("M=D\n", output_file);
+                
+                //reposition LCL
+                fputs("@SP\n", output_file);
+                fputs("D=A\n", output_file);
+                fputs("@LCL\n", output_file);
+                fputs("M=D\n", output_file);
+                
+                //go to function
+                fprintf(output_file, "@%s\n", funcName);
+                fputs("0;JMP\n", output_file);
+                
+                //mark the return address
+                fprintf(output_file, "(%s)\n", returnAddress);
             }
             
             count++;
