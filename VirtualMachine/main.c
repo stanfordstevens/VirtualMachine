@@ -218,7 +218,7 @@ int main(int argc, const char * argv[]) {
                 fputs("A=M\n", output_file);
                 fputs("M=D\n", output_file);
                 
-                //decrement stack pointer
+                //decrement stack pointer //TODO: make this a function
                 fputs("@SP\nM=M-1\n", output_file);
             } else if (strcmp(command, "add") == 0 || strcmp(command, "sub") == 0) {
                 fputs("@SP\n", output_file);
@@ -267,6 +267,25 @@ int main(int argc, const char * argv[]) {
                 fputs("@SP\n", output_file);
                 fputs("A=M-1\n", output_file);
                 fputs("M=!M\n", output_file);
+            } else if (strcmp(command, "label") == 0) { //TODO: function name should be appended to beginning of label
+                char *label = strtok(NULL, delimeter);
+                
+                fprintf(output_file, "(%s)\n", label);
+            } else if (strcmp(command, "goto") == 0) {
+                char *label = strtok(NULL, delimeter);
+    
+                fprintf(output_file, "@%s\n", label);
+                fputs("0;JMP\n", output_file);
+            } else if (strcmp(command, "if-goto") == 0) {
+                char *label = strtok(NULL, delimeter);
+                
+                fputs("@SP\n", output_file);
+                fputs("A=M-1\n", output_file);
+                fputs("D=M\n", output_file);
+                fputs("@SP\nM=M-1\n", output_file); //decrement stack pointer
+                
+                fprintf(output_file, "@%s\n", label);
+                fputs("D;JNE\n", output_file);
             }
             
             count++;
