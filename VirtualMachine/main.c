@@ -68,6 +68,10 @@ char* labelForSegmentName(char *segment) {
     }
 }
 
+void decrementStackPointerForFile(FILE *file) {
+    fputs("@SP\nM=M-1\n", file);
+}
+
 int main(int argc, const char * argv[]) {
     char *filepath = malloc(200*sizeof(char));
     printf("Enter filepath> ");
@@ -218,8 +222,7 @@ int main(int argc, const char * argv[]) {
                 fputs("A=M\n", output_file);
                 fputs("M=D\n", output_file);
                 
-                //decrement stack pointer //TODO: make this a function
-                fputs("@SP\nM=M-1\n", output_file);
+                decrementStackPointerForFile(output_file);
             } else if (strcmp(command, "add") == 0 || strcmp(command, "sub") == 0) {
                 fputs("@SP\n", output_file);
                 fputs("A=M-1\n", output_file);
@@ -227,7 +230,7 @@ int main(int argc, const char * argv[]) {
                 fputs("A=A-1\n", output_file);
                 
                 fprintf(output_file, "M=M%sD\n", strcmp(command, "add") == 0 ? "+" : "-");
-                fputs("@SP\nM=M-1\n", output_file);
+                decrementStackPointerForFile(output_file);
             } else if (strcmp(command, "neg") == 0) {
                 fputs("@SP\n", output_file);
                 fputs("A=M-1\n", output_file);
@@ -254,7 +257,7 @@ int main(int argc, const char * argv[]) {
                 fputs("A=M-1\n", output_file);
                 fputs("A=A-1\n", output_file);
                 fputs("M=D\n", output_file);
-                fputs("@SP\nM=M-1\n", output_file);
+                decrementStackPointerForFile(output_file);
             } else if (strcmp(command, "and") == 0 || strcmp(command, "or") == 0) {
                 fputs("@SP\n", output_file);
                 fputs("A=M-1\n", output_file);
@@ -262,7 +265,7 @@ int main(int argc, const char * argv[]) {
                 fputs("A=A-1\n", output_file);
                 
                 fprintf(output_file, "M=M%sD\n", strcmp(command, "and") == 0 ? "&" : "|");
-                fputs("@SP\nM=M-1\n", output_file);
+                decrementStackPointerForFile(output_file);
             } else if (strcmp(command, "not") == 0) {
                 fputs("@SP\n", output_file);
                 fputs("A=M-1\n", output_file);
@@ -282,7 +285,7 @@ int main(int argc, const char * argv[]) {
                 fputs("@SP\n", output_file);
                 fputs("A=M-1\n", output_file);
                 fputs("D=M\n", output_file);
-                fputs("@SP\nM=M-1\n", output_file); //decrement stack pointer
+                decrementStackPointerForFile(output_file);
                 
                 fprintf(output_file, "@%s\n", label);
                 fputs("D;JNE\n", output_file);
