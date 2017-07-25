@@ -312,7 +312,7 @@ int main(int argc, const char * argv[]) {
                     fputs("@SP\n", output_file);
                     fputs("A=M\n", output_file);
                     fputs("M=0\n", output_file);
-                    incrementStackPointerForFile(output_file); //TODO: am i supposed to actually increment stack pointer..?
+                    incrementStackPointerForFile(output_file);
                 }
             } else if (strcmp(command, "return") == 0) {
                 //set FRAME
@@ -339,7 +339,7 @@ int main(int argc, const char * argv[]) {
                 fputs("M=D\n", output_file);
                 
                 //restore SP
-                fputs("@ARG\n", output_file); //TODO: problem restoring SP???
+                fputs("@ARG\n", output_file);
                 fputs("D=M+1\n", output_file);
                 fputs("@SP\n", output_file);
                 fputs("M=D\n", output_file);
