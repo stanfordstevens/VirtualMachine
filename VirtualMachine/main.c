@@ -63,8 +63,7 @@ char* labelForSegmentName(char *segment) {
     } else if (strcmp(segment, "temp") == 0) {
         return "LCL";
     } else {
-        //TODO: what do i do if it is not any of these?? defaulting to local for now
-        return "LCL";
+        return "LCL"; //defaulting to LCL for now
     }
 }
 
@@ -183,11 +182,10 @@ int main(int argc, const char * argv[]) {
     strcat(output_path, directory_name);
     strcat(output_path, ".asm");
     
-    //TODO: delete file at output_path if it already exists
-    
     FILE *output_file = fopen(output_path, "w");
     
-    fputs("@256\nD=A\n@SP\nM=D\n", output_file); //initialize stack pointer
+    //bootstrap code
+    fputs("@256\nD=A\n@SP\nM=D\n", output_file);
     callFunction("Sys.init", "0", "InitialFunction", output_file);
     
     for (int i = 0; i < number_of_files; i++) {
