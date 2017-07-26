@@ -76,13 +76,45 @@ void incrementStackPointerForFile(FILE *file) {
     fputs("@SP\nM=M+1\n", file);
 }
 
-void pushAddressToStackForFile(char *address, FILE *file) {
+void pushAddressToStackForFile(char *address, FILE *file, char *fuck) {
     fprintf(file, "@%s\n", address);
-    fputs("D=M\n", file);
+    fprintf(file, "D=%s\n", fuck); //TODO: this should be D=A for return address??
     fputs("@SP\n", file);
     fputs("A=M\n", file);
     fputs("M=D\n", file);
     incrementStackPointerForFile(file);
+}
+
+void callFunction(char *name, char *argCount, char *returnAddress, FILE *file) {
+    //save function state
+    pushAddressToStackForFile(returnAddress, file, "A"); //TODO: obvi fix this shit
+    pushAddressToStackForFile("LCL", file, "M");
+    pushAddressToStackForFile("ARG", file, "M");
+    pushAddressToStackForFile("THIS", file, "M");
+    pushAddressToStackForFile("THAT", file, "M");
+    
+    //reposition ARG
+    fputs("@SP\n", file);
+    fputs("D=M\n", file);
+    fprintf(file, "@%s\n", argCount);
+    fputs("D=D-A\n", file);
+    fputs("@5\n", file);
+    fputs("D=D-A\n", file);
+    fputs("@ARG\n", file);
+    fputs("M=D\n", file);
+    
+    //reposition LCL
+    fputs("@SP\n", file);
+    fputs("D=M\n", file);
+    fputs("@LCL\n", file);
+    fputs("M=D\n", file);
+    
+    //go to function
+    fprintf(file, "@%s\n", name);
+    fputs("0;JMP\n", file);
+    
+    //mark the return address
+    fprintf(file, "(%s)\n", returnAddress);
 }
 
 int main(int argc, const char * argv[]) {
@@ -151,12 +183,8 @@ int main(int argc, const char * argv[]) {
     
     FILE *output_file = fopen(output_path, "w");
     
-    //TODO: do not need to initialize this myself yet
-//    fputs("@256\nD=A\n@SP\nM=D\n", output_file); //initialize stack pointer
-//    fputs("@300\nD=A\n@LCL\nM=D\n", output_file); //initialize local (initialize to same as stack pointer??)
-//    fputs("@400\nD=A\n@ARG\nM=D\n", output_file); //initialize argument
-//    fputs("@3000\nD=A\n@THIS\nM=D\n", output_file); //initialize this
-//    fputs("@3010\nD=A\n@THAT\nM=D\n", output_file); //initialize that
+    fputs("@256\nD=A\n@SP\nM=D\n", output_file); //initialize stack pointer
+    callFunction("Sys.init", "0", "InitialFunction", output_file);
     
     for (int i = 0; i < number_of_files; i++) {
         char *filepath = files[i];
@@ -285,16 +313,16 @@ int main(int argc, const char * argv[]) {
                 fputs("A=M-1\n", output_file);
                 fputs("M=!M\n", output_file);
             } else if (strcmp(command, "label") == 0) {
-                char *label = strtok(NULL, delimeter); //TODO: function name should be appended to beginning of label
+                char *label = strtok(NULL, delimeter);
                 
                 fprintf(output_file, "(%s)\n", label);
             } else if (strcmp(command, "goto") == 0) {
-                char *label = strtok(NULL, delimeter); //TODO: function name should be appended to beginning of label
+                char *label = strtok(NULL, delimeter);
     
                 fprintf(output_file, "@%s\n", label);
                 fputs("0;JMP\n", output_file);
             } else if (strcmp(command, "if-goto") == 0) {
-                char *label = strtok(NULL, delimeter); //TODO: function name should be appended to beginning of label
+                char *label = strtok(NULL, delimeter);
                 
                 fputs("@SP\n", output_file);
                 fputs("A=M-1\n", output_file);
@@ -350,7 +378,7 @@ int main(int argc, const char * argv[]) {
                 restoreValueOfAddressWithOffset("ARG", 3);
                 restoreValueOfAddressWithOffset("LCL", 4);
 #undef restoreValueOfAddressWithOffset
-                
+        
                 //go to return address
                 fputs("@RET\n", output_file);
                 fputs("A=M\n", output_file);
@@ -359,37 +387,9 @@ int main(int argc, const char * argv[]) {
                 char *funcName = strtok(NULL, delimeter);
                 char *parameterCount = strtok(NULL, delimeter);
                 
-                //save function state
                 char returnAddress[256];
-                snprintf(returnAddress, sizeof(returnAddress), "@return-address.%s.%s.%d\n", filename, funcName, count);
-                pushAddressToStackForFile(returnAddress, output_file);
-                pushAddressToStackForFile("@LCL\n", output_file);
-                pushAddressToStackForFile("@ARG\n", output_file);
-                pushAddressToStackForFile("@THIS\n", output_file);
-                pushAddressToStackForFile("@THAT\n", output_file);
-                
-                //reposition ARG
-                fputs("@SP\n", output_file);
-                fputs("D=A\n", output_file);
-                fprintf(output_file, "@%s\n", parameterCount);
-                fputs("D=D-A\n", output_file);
-                fputs("@5\n", output_file);
-                fputs("D=D-A\n", output_file);
-                fputs("@ARG\n", output_file);
-                fputs("M=D\n", output_file);
-                
-                //reposition LCL
-                fputs("@SP\n", output_file);
-                fputs("D=A\n", output_file);
-                fputs("@LCL\n", output_file);
-                fputs("M=D\n", output_file);
-                
-                //go to function
-                fprintf(output_file, "@%s\n", funcName);
-                fputs("0;JMP\n", output_file);
-                
-                //mark the return address
-                fprintf(output_file, "(%s)\n", returnAddress);
+                snprintf(returnAddress, sizeof(returnAddress), "return-address.%s.%s.%d", filename, funcName, count);
+                callFunction(funcName, parameterCount, returnAddress, output_file);
             }
             
             count++;
