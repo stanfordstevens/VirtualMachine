@@ -14,24 +14,12 @@
 #include <string.h>
 #include <ctype.h>
 
-int is_vm_file(char *file) {
+int is_vm_file(const char *file) {
     const char *dot = strrchr(file, '.');
     if(!dot || dot == file) { return 0; }
     
     const char *extension = dot + 1;
-    if (strcmp(extension, "vm") == 0) {
-        return 1;
-    } else {
-        return 0;
-    }
-}
-
-int should_ignore_line(char *line) {
-    if ((line[0] == '/' && line[1] == '/') || isspace(line[0]) || strcmp(line, "") == 0 || strcmp(line, "\r\n") == 0) { //TODO: this is awful
-        return 1;
-    }
-    
-    return 0;
+    return (strcmp(extension, "vm") == 0) ? 1 : 0;
 }
 
 char* trim_whitespace(char *string) {
@@ -51,7 +39,7 @@ char* trim_whitespace(char *string) {
     return string;
 }
 
-char* labelForSegmentName(char *segment) {
+char* labelForSegmentName(const char *segment) {
     if (strcmp(segment, "local") == 0) {
         return "LCL";
     } else if (strcmp(segment, "argument") == 0) {
@@ -75,7 +63,7 @@ void incrementStackPointerForFile(FILE *file) {
     fputs("@SP\nM=M+1\n", file);
 }
 
-void pushAddressWithLocationToStackForFile(char *address, char *loc, FILE *file) {
+void pushAddressWithLocationToStackForFile(const char *address, const char *loc, FILE *file) {
     fprintf(file, "@%s\n", address);
     fprintf(file, "D=%s\n", loc);
     fputs("@SP\n", file);
@@ -84,11 +72,11 @@ void pushAddressWithLocationToStackForFile(char *address, char *loc, FILE *file)
     incrementStackPointerForFile(file);
 }
 
-void pushAddressToStackForFile(char *address, FILE *file) {
+void pushAddressToStackForFile(const char *address, FILE *file) {
     pushAddressWithLocationToStackForFile(address, "M", file);
 }
 
-void callFunction(char *name, char *argCount, char *returnAddress, FILE *file) {
+void callFunction(const char *name, const char *argCount, const char *returnAddress, FILE *file) {
     //save function state
     pushAddressWithLocationToStackForFile(returnAddress, "A", file);
     pushAddressToStackForFile("LCL", file);
@@ -121,7 +109,7 @@ void callFunction(char *name, char *argCount, char *returnAddress, FILE *file) {
 }
 
 int main(int argc, const char * argv[]) {
-    char *filepath = malloc(200*sizeof(char));
+    char *filepath = malloc(200);
     printf("Enter filepath> ");
     scanf("%s", filepath);
     
@@ -145,12 +133,12 @@ int main(int argc, const char * argv[]) {
                 files = realloc(files, number_of_files * sizeof(char *));
                 
                 size_t new_index = number_of_files - 1;
-                char *entry_path = malloc(sizeof(filepath) + sizeof(entry->d_name));
+                char *entry_path = malloc(strlen(filepath) + strlen(entry->d_name) + 1 + 1);
                 strcpy(entry_path, filepath);
                 strcat(entry_path, "/");
                 strcat(entry_path, entry->d_name);
                 size_t entry_length = strlen(entry_path) + 1;
-                files[new_index] = malloc(entry_length * sizeof(char));
+                files[new_index] = malloc(entry_length);
                 strcpy(files[new_index], entry_path);
             }
             
@@ -160,7 +148,7 @@ int main(int argc, const char * argv[]) {
         if (is_vm_file(filepath)) {
             number_of_files = 1;
             size_t file_length = strlen(filepath) + 1;
-            files[0] = malloc(file_length * sizeof(char));
+            files[0] = malloc(file_length);
             strcpy(files[0], filepath);
         }
     }
@@ -170,12 +158,12 @@ int main(int argc, const char * argv[]) {
         return 1;
     }
     
-    char output_path[200];
+    char output_path[strlen(files[0]) + 1];
     strcpy(output_path, files[0]);
     char *loc = strrchr(output_path, '/');
     *(loc) = 0;
     
-    char directory_name[30];
+    char directory_name[strlen(output_path)];
     strcpy(directory_name, strrchr(output_path, '/') + 1);
     
     strcat(output_path, "/");
@@ -185,20 +173,22 @@ int main(int argc, const char * argv[]) {
     FILE *output_file = fopen(output_path, "w");
     
     //bootstrap code
-    fputs("@256\nD=A\n@SP\nM=D\n", output_file);
+    fputs("@256\nD=A\n@SP\nM=D\n", output_file); //initialize SP
     callFunction("Sys.init", "0", "InitialFunction", output_file);
     
     for (int i = 0; i < number_of_files; i++) {
         char *filepath = files[i];
-        char *filename = malloc(sizeof(char)*30);
+        char *filename = malloc(strlen(filepath));
         filename = strtok(strcpy(filename, strrchr(filepath, '/') + 1), ".");
         FILE *input_file = fopen(filepath, "r");
         
         char line[256];
         int count = 0;
+        
         while (fgets(line, sizeof(line), input_file)) {
+            if ((line[0] == '/' && line[1] == '/') || isspace(line[0]) || strcmp(line, "") == 0 || strcmp(line, "\r\n") == 0) { continue; }
+            
             char *trimmed_line = trim_whitespace(line);
-            if (should_ignore_line(trimmed_line)) { continue; }
             
             static const char *delimeter = " ";
             char *command = strtok(trimmed_line, delimeter);
