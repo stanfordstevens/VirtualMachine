@@ -76,22 +76,26 @@ void incrementStackPointerForFile(FILE *file) {
     fputs("@SP\nM=M+1\n", file);
 }
 
-void pushAddressToStackForFile(char *address, FILE *file, char *fuck) {
+void pushAddressWithLocationToStackForFile(char *address, char *loc, FILE *file) {
     fprintf(file, "@%s\n", address);
-    fprintf(file, "D=%s\n", fuck); //TODO: this should be D=A for return address??
+    fprintf(file, "D=%s\n", loc);
     fputs("@SP\n", file);
     fputs("A=M\n", file);
     fputs("M=D\n", file);
     incrementStackPointerForFile(file);
 }
 
+void pushAddressToStackForFile(char *address, FILE *file) {
+    pushAddressWithLocationToStackForFile(address, "M", file);
+}
+
 void callFunction(char *name, char *argCount, char *returnAddress, FILE *file) {
     //save function state
-    pushAddressToStackForFile(returnAddress, file, "A"); //TODO: obvi fix this shit
-    pushAddressToStackForFile("LCL", file, "M");
-    pushAddressToStackForFile("ARG", file, "M");
-    pushAddressToStackForFile("THIS", file, "M");
-    pushAddressToStackForFile("THAT", file, "M");
+    pushAddressWithLocationToStackForFile(returnAddress, "A", file);
+    pushAddressToStackForFile("LCL", file);
+    pushAddressToStackForFile("ARG", file);
+    pushAddressToStackForFile("THIS", file);
+    pushAddressToStackForFile("THAT", file);
     
     //reposition ARG
     fputs("@SP\n", file);
