@@ -144,13 +144,10 @@ int main(int argc, const char * argv[]) {
             
             closedir(directory);
         }
-    } else if (S_ISREG(path_stat.st_mode)) {
-        if (is_vm_file(filepath)) {
-            number_of_files = 1;
-            size_t file_length = strlen(filepath) + 1;
-            files[0] = malloc(file_length);
-            strcpy(files[0], filepath);
-        }
+    } else if (S_ISREG(path_stat.st_mode) && is_vm_file(filepath)) {
+        number_of_files = 1;
+        files[0] = malloc(strlen(filepath) + 1);
+        strcpy(files[0], filepath);
     }
     
     if (number_of_files == 0) {
